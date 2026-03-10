@@ -1,0 +1,24 @@
+# ============================================================
+# DNA Analyzer — BioSeq Lab
+# Fichier de dépendances Python
+# Installation : pip install -r requirements.txt
+# ============================================================
+
+# --- Interface Graphique ---
+pillow>=10.0.0               # Images et icônes dans l'interface
+customtkinter>=5.2.0         # Tkinter avec thème moderne (optionnel)
+ttkbootstrap>=1.10.1         # Thèmes Bootstrap pour Tkinter (optionnel)
+
+# --- Visualisations & Graphiques ---
+matplotlib>=3.7.0            # Graphiques intégrés dans Tkinter
+numpy>=1.24.0                # Calculs numériques (GC%, Tm, etc.)
+
+# --- Bioinformatique ---
+biopython>=1.81              # Outils ADN/ARN/Protéines professionnels
+
+# --- Export des Résultats ---
+openpyxl>=3.1.0              # Export Excel (.xlsx)
+reportlab>=4.0.0             # Génération de rapports PDF
+
+# --- Utilitaires ---
+requests>=2.31.0             # Requêtes HTTP (NCBI BLAST, etc.)
