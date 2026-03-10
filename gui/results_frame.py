@@ -24,7 +24,6 @@ GREEN_S    = '#27AE60'
 RED_S      = '#C0392B'
 YELLOW_S   = '#F39C12'
 
-# Couleurs de tag (pastel)
 TAG_GREEN_BG  = '#D4EDDA'
 TAG_BLUE_BG   = '#D1ECF1'
 TAG_ORANGE_BG = '#FDEBD0'
@@ -46,7 +45,6 @@ class ResultsFrame(tk.Frame):
         self._build()
 
     def _build(self):
-        # Canvas de fond avec motifs ADN subtils
         self.bg_canvas = tk.Canvas(self, bg=BG_MAIN, bd=0, highlightthickness=0)
         self.bg_canvas.place(x=0, y=0, relwidth=1.0, relheight=1.0)
         self.bg_canvas.bind('<Configure>', lambda e: self._draw_bg())
@@ -54,7 +52,8 @@ class ResultsFrame(tk.Frame):
         self.inner_nb = ttk.Notebook(self)
         self.inner_nb.pack(fill='both', expand=True, padx=6, pady=6)
 
-        self.tab_orfs        = self._tab('🔍  ORFs')
+        self.tab_frames      = self._tab('📋  Cadres de lecture')
+        self.tab_orfs        = self._tab('🔍  ORFs (ATG→Stop)')
         self.tab_protein     = self._tab('⚙️  Protéine')
         self.tab_promoters   = self._tab('📍  Promoteurs')
         self.tab_sd          = self._tab('🎯  Shine-Dalgarno')
@@ -74,7 +73,6 @@ class ResultsFrame(tk.Frame):
         h = c.winfo_height()
         if w < 10:
             return
-        # Hélice décorative en arrière-plan (très pâle)
         step = 20
         amp  = 14
         freq = 0.035
@@ -86,7 +84,6 @@ class ResultsFrame(tk.Frame):
             for i in range(len(pts)-1):
                 c.create_line(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1],
                                fill='#D8F3DC', width=3, smooth=True, tags='bgpat')
-        # Petits cercles (bases)
         for i, x in enumerate(range(0, w, 40)):
             y1 = h*0.5 + amp * math.sin(freq*x)
             y2 = h*0.5 + amp * math.sin(freq*x + math.pi)
@@ -94,6 +91,7 @@ class ResultsFrame(tk.Frame):
 
     def display(self, results):
         self._draw_bg()
+        self._show_reading_frames(results)
         self._show_orfs(results)
         self._show_protein(results)
         self._show_promoters(results)
@@ -148,13 +146,200 @@ class ResultsFrame(tk.Frame):
         tk.Label(parent, text=msg, bg=BG_SURFACE, fg=FG_DIM,
                  font=('Georgia', 10)).pack(expand=True, pady=40)
 
-    # ── ORFs ──────────────────────────────────────────────────
+    # ── CADRES DE LECTURE (6 frames) ──────────────────────────
+    def _show_reading_frames(self, results):
+        try:
+            tab = self.tab_frames
+            self._clear(tab)
+            frames_data = results.get('reading_frames', [])
+            seq = results.get('seq', '')
+
+            total_segments = len(frames_data)
+            self._section_header(tab, '  Tous les cadres de lecture — 6 frames',
+                                  total_segments, bool(total_segments))
+            self._info_hint(tab,
+                "Segments entre codons stop  •  "
+                "5'→3' : +1 +2 +3  •  3'→5' RC : -1 -2 -3  •  "
+                "ATG = vert  |  STOP = rouge")
+
+            if not seq:
+                self._empty(tab, 'Lancez d\'abord une analyse.')
+                return
+
+            # ── Zone scrollable ──────────────────────────────────
+            outer = tk.Frame(tab, bg=BG_SURFACE)
+            outer.pack(fill='both', expand=True, padx=8, pady=4)
+
+            sc = tk.Canvas(outer, bg=BG_SURFACE, bd=0, highlightthickness=0)
+            vsb = ttk.Scrollbar(outer, orient='vertical', command=sc.yview)
+            sc.configure(yscrollcommand=vsb.set)
+            vsb.pack(side='right', fill='y')
+            sc.pack(side='left', fill='both', expand=True)
+
+            inner = tk.Frame(sc, bg=BG_SURFACE)
+            win_id = sc.create_window((0, 0), window=inner, anchor='nw')
+
+            inner.bind('<Configure>',
+                       lambda e, c=sc: c.configure(scrollregion=c.bbox('all')))
+            sc.bind('<Configure>',
+                    lambda e, c=sc, w=win_id: c.itemconfig(w, width=e.width))
+
+            from data.codon_table import STOP_CODONS
+            seq_upper = seq.upper()
+            rc_seq = reverse_complement(seq_upper)
+
+            frame_order = [1, 2, 3, -1, -2, -3]
+            frame_labels = {
+                1:  "Frame +1  (5'→3', pos 1)",
+                2:  "Frame +2  (5'→3', pos 2)",
+                3:  "Frame +3  (5'→3', pos 3)",
+               -1:  "Frame -1  (3'→5' RC, pos 1)",
+               -2:  "Frame -2  (3'→5' RC, pos 2)",
+               -3:  "Frame -3  (3'→5' RC, pos 3)",
+            }
+            frame_colors = {
+                1: '#2D6A4F', 2: '#1B7A8A', 3: '#B85C0A',
+               -1: '#6B2D8F', -2: '#8B1A1A', -3: '#8B6914',
+            }
+            frame_bg = {
+                1: '#D4EDDA', 2: '#D1ECF1', 3: '#FDEBD0',
+               -1: '#E8DAEF', -2: '#FADBD8', -3: '#FEF9E7',
+            }
+
+            for fnum in frame_order:
+                group = [f for f in frames_data if f['frame'] == fnum]
+                col_hdr = frame_colors[fnum]
+                col_bg  = frame_bg[fnum]
+                frame_idx = abs(fnum) - 1
+                strand_seq = seq_upper if fnum > 0 else rc_seq
+
+                # En-tête coloré
+                hdr = tk.Frame(inner, bg=col_hdr, padx=10, pady=6)
+                hdr.pack(fill='x', pady=(10, 0))
+                tk.Label(hdr,
+                         text=f"  {frame_labels[fnum]}  —  {len(group)} segment(s)",
+                         bg=col_hdr, fg='#FFFFFF',
+                         font=('Georgia', 10, 'bold')).pack(side='left')
+
+                # Codons visuels
+                codon_wrap = tk.Frame(inner, bg=col_bg,
+                                      highlightthickness=1, highlightbackground=BORDER)
+                codon_wrap.pack(fill='x', padx=4, pady=2)
+                tk.Label(codon_wrap,
+                         text=f"  Codons (frame {'+' if fnum>0 else ''}{fnum}) :",
+                         bg=col_bg, fg=frame_colors[fnum],
+                         font=('Georgia', 8, 'bold')).pack(anchor='w', padx=6, pady=(4, 2))
+
+                codons_container = tk.Frame(codon_wrap, bg=col_bg)
+                codons_container.pack(fill='x', padx=6, pady=(0, 6))
+
+                all_codons = [
+                    strand_seq[i:i+3]
+                    for i in range(frame_idx, len(strand_seq) - 2, 3)
+                    if len(strand_seq[i:i+3]) == 3
+                ]
+
+                MAX_SHOW = 90
+                COLS = 18
+                row_f = None
+                for ci, codon in enumerate(all_codons[:MAX_SHOW]):
+                    if ci % COLS == 0:
+                        row_f = tk.Frame(codons_container, bg=col_bg)
+                        row_f.pack(anchor='w', pady=1)
+                    is_stop  = codon in STOP_CODONS
+                    is_start = (codon == 'ATG')
+                    if is_stop:
+                        cbg, cfg, cfw = '#FADBD8', '#C0392B', 'bold'
+                    elif is_start:
+                        cbg, cfg, cfw = '#C8E6C9', '#145C38', 'bold'
+                    else:
+                        cbg, cfg, cfw = col_bg, FG_MAIN, 'normal'
+                    tk.Label(row_f, text=codon,
+                             bg=cbg, fg=cfg,
+                             font=('Courier New', 8, cfw),
+                             relief='groove', padx=3, pady=2, bd=1,
+                             width=3).pack(side='left', padx=1)
+
+                if len(all_codons) > MAX_SHOW:
+                    tk.Label(codons_container,
+                             text=f'  … +{len(all_codons)-MAX_SHOW} codons (non affichés)',
+                             bg=col_bg, fg=FG_DIM,
+                             font=('Georgia', 8, 'italic')).pack(anchor='w', pady=2)
+
+                # Tableau des segments
+                if group:
+                    tk.Label(inner,
+                             text='  ↳ Segments entre codons stop :',
+                             bg=BG_SURFACE, fg=FG_LABEL,
+                             font=('Georgia', 8, 'bold')).pack(anchor='w', padx=10, pady=(4, 0))
+
+                    seg_frame = tk.Frame(inner, bg=BG_SURFACE,
+                                         highlightthickness=1, highlightbackground=BORDER)
+                    seg_frame.pack(fill='x', padx=8, pady=(0, 4))
+
+                    cols_t   = ('Début', 'Fin', 'Long. (pb)', 'Nb AA', 'ATG ?', 'Stop', 'Protéine (aperçu)')
+                    widths_t = (80,      80,    95,           65,      70,      80,      360)
+                    tree = ttk.Treeview(seg_frame, columns=cols_t, show='headings',
+                                        height=min(len(group), 5))
+                    for ci2, col_name in enumerate(cols_t):
+                        tree.heading(col_name, text=col_name)
+                        tree.column(col_name, width=widths_t[ci2], anchor='center', minwidth=40)
+                    hsb2 = ttk.Scrollbar(seg_frame, orient='horizontal', command=tree.xview)
+                    tree.configure(xscrollcommand=hsb2.set)
+                    tree.pack(fill='x')
+                    hsb2.pack(fill='x')
+
+                    for seg in group:
+                        has_atg_str = '✔ ATG' if seg.get('has_atg') else '—'
+                        prot = seg.get('protein', '')
+                        prot_preview = prot[:50] + ('…' if len(prot) > 50 else '')
+                        tag = 'withatg' if seg.get('has_atg') else 'noatg'
+                        tree.insert('', 'end', values=(
+                            seg['start']+1, seg['end'],
+                            seg['length'], seg['num_aa'],
+                            has_atg_str, seg['stop_codon'],
+                            prot_preview,
+                        ), tags=(tag,))
+                    tree.tag_configure('withatg', foreground=ACCENT,
+                                       font=('Courier New', 9, 'bold'))
+                    tree.tag_configure('noatg',   foreground=FG_DIM,
+                                       font=('Courier New', 9))
+                else:
+                    tk.Label(inner,
+                             text='  Aucun segment de taille suffisante dans ce cadre.',
+                             bg=BG_SURFACE, fg=FG_DIM,
+                             font=('Georgia', 8, 'italic')).pack(anchor='w', padx=20, pady=2)
+
+            # Légende
+            leg = tk.Frame(inner, bg=BG_SURFACE,
+                           highlightthickness=1, highlightbackground=BORDER)
+            leg.pack(fill='x', padx=8, pady=10)
+            tk.Label(leg, text='  Légende : ', bg=BG_SURFACE, fg=FG_DIM,
+                     font=('Georgia', 8, 'bold')).pack(side='left', padx=4)
+            for ltext, lbg, lfg in [
+                (' ATG ', '#C8E6C9', '#145C38'),
+                (' STOP ', '#FADBD8', '#C0392B'),
+                (' autre ', BG_CARD, FG_MAIN),
+            ]:
+                tk.Label(leg, text=ltext, bg=lbg, fg=lfg,
+                         font=('Courier New', 8, 'bold'), relief='groove',
+                         padx=2, pady=1).pack(side='left', padx=3, pady=4)
+
+        except Exception as e:
+            import traceback
+            tk.Label(self.tab_frames,
+                     text=f'Erreur affichage cadres :\n{traceback.format_exc()}',
+                     bg=BG_SURFACE, fg=RED_S,
+                     font=('Courier New', 8),
+                     justify='left', wraplength=700).pack(padx=10, pady=10)
+
+    # ── ORFs (ATG→Stop) ───────────────────────────────────────
     def _show_orfs(self, results):
         tab = self.tab_orfs
         self._clear(tab)
         orfs = results.get('orfs', [])
-        self._section_header(tab, '  Open Reading Frames (ORFs)', len(orfs), bool(orfs))
-        self._info_hint(tab, 'Détection sur les 6 cadres de lecture • longueur min. réglable dans le panneau gauche')
+        self._section_header(tab, '  Open Reading Frames — ATG → Stop (6 cadres)', len(orfs), bool(orfs))
+        self._info_hint(tab, 'Détection ATG→Stop sur les 6 cadres de lecture • longueur min. réglable dans le panneau gauche')
         if not orfs:
             msg = ('Aucun ORF détecté.\n\n'
                    '→ Réduisez la longueur minimale dans le panneau gauche\n'
@@ -163,7 +348,7 @@ class ResultsFrame(tk.Frame):
             self._empty(tab, msg)
             return
         cols   = ('#', 'Frame', 'Début', 'Fin', 'Longueur (pb)', 'Nb AA', 'Brin', 'Codon Stop', 'Statut')
-        widths = (40,  70,      80,      80,    120,            70,      60,     100,           110)
+        widths = (40,  70,      80,      80,    120,             70,      60,     100,           110)
         tree = self._make_tree(tab, cols, widths)
         for i, orf in enumerate(orfs):
             status = '★ Meilleur candidat' if i == 0 and orf['strand'] == '+' else 'Candidat'
@@ -195,7 +380,6 @@ class ResultsFrame(tk.Frame):
         protein = best['protein']
         self._section_header(tab, f"  ORF codant — Frame +{best['frame']} — {len(protein)} aa", None, True)
 
-        # Cartes d'info
         info_frame = tk.Frame(tab, bg=BG_SURFACE)
         info_frame.pack(fill='x', padx=8, pady=4)
         infos = [
@@ -220,7 +404,6 @@ class ResultsFrame(tk.Frame):
         for col in range(3):
             info_frame.columnconfigure(col, weight=1)
 
-        # Séquence protéique
         tk.Label(tab, text='Séquence protéique traduite (colorée par propriété) :',
                  bg=BG_SURFACE, fg=FG_LABEL,
                  font=('Georgia', 9)).pack(anchor='w', padx=10, pady=(6, 2))
@@ -246,7 +429,6 @@ class ResultsFrame(tk.Frame):
             tw.insert('end', aa, tag)
         tw.config(state='disabled')
 
-        # Légende
         leg = tk.Frame(tab, bg=BG_SURFACE)
         leg.pack(fill='x', padx=10, pady=4)
         for col, lbl in [('#E67E22','Hydrophobe'), ('#2196A6','Polaire'),
@@ -381,7 +563,6 @@ class ResultsFrame(tk.Frame):
         for col in range(4):
             info_frame.columnconfigure(col, weight=1)
 
-        # Barre de composition
         bar_lbl = tk.Label(tab, text='Composition nucléotidique :',
                             bg=BG_SURFACE, fg=FG_LABEL, font=('Georgia', 9))
         bar_lbl.pack(anchor='w', padx=10, pady=(8, 2))
@@ -411,19 +592,18 @@ class ResultsFrame(tk.Frame):
 
         bar_canvas.bind('<Configure>', draw_bars)
 
-        # Légende couleurs bases
         leg = tk.Frame(tab, bg=BG_SURFACE)
         leg.pack(fill='x', padx=10, pady=6)
         for base, color in bar_colors.items():
             tk.Label(leg, text=f'■ {base}', bg=BG_SURFACE, fg=color,
                      font=('Georgia', 9, 'bold')).pack(side='left', padx=10)
 
+
 def display_reading_frames(seq):
     seq = seq.upper().replace(" ", "").replace("\n", "")
     rc = reverse_complement(seq)
 
     print("\n===== BRIN 5' → 3' =====\n")
-
     for frame in range(3):
         codons = [seq[i:i+3] for i in range(frame, len(seq)-2, 3)]
         print(f"Frame +{frame+1}:")
@@ -431,7 +611,6 @@ def display_reading_frames(seq):
         print()
 
     print("\n===== BRIN 3' → 5' (reverse complement) =====\n")
-
     for frame in range(3):
         codons = [rc[i:i+3] for i in range(frame, len(rc)-2, 3)]
         print(f"Frame -{frame+1}:")

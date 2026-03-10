@@ -5,12 +5,13 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import math
+import threading
 
 from gui.input_frame     import InputFrame
 from gui.results_frame   import ResultsFrame
 from gui.visualize_frame import VisualizeFrame
 
-from analysis.orf_finder   import find_orfs
+from analysis.orf_finder   import find_orfs, find_reading_frames
 from analysis.motif_finder import (find_promoters, find_shine_dalgarno,
                                    find_terminators, find_restriction_sites)
 from analysis.statistics   import (nucleotide_composition, calc_tm_wallace,
@@ -42,6 +43,7 @@ class DNAAnalyzerApp:
         self.root.minsize(950, 650)
         self.root.configure(bg=BG_MAIN)
         self.results = {}
+        self._analysis_running = False
         self._apply_styles()
         self._build_menu()
         self._build_layout()
@@ -84,9 +86,11 @@ class DNAAnalyzerApp:
         menubar.add_cascade(label='Fichier', menu=file_menu)
         analysis_menu = tk.Menu(menubar, tearoff=0, bg=BG_SURFACE, fg=FG_MAIN,
                                  activebackground='#C8E6C9')
-        analysis_menu.add_command(label='▶  Lancer toutes les analyses', command=self._run_analysis)
+        analysis_menu.add_command(label='▶  Lancer toutes les analyses',
+                                   command=self._run_analysis)
         analysis_menu.add_separator()
-        analysis_menu.add_command(label='↔  Brin complémentaire inverse', command=self._reverse_complement)
+        analysis_menu.add_command(label='↔  Brin complémentaire inverse',
+                                   command=self._reverse_complement)
         menubar.add_cascade(label='Analyse', menu=analysis_menu)
         help_menu = tk.Menu(menubar, tearoff=0, bg=BG_SURFACE, fg=FG_MAIN,
                              activebackground='#C8E6C9')
@@ -146,7 +150,7 @@ class DNAAnalyzerApp:
         amp  = 9
         freq = 0.048
         off  = self._dna_offset
-        pts1 = [(x, h/2 + amp * math.sin(freq*x + off))        for x in range(0, w+step, step)]
+        pts1 = [(x, h/2 + amp * math.sin(freq*x + off))           for x in range(0, w+step, step)]
         pts2 = [(x, h/2 + amp * math.sin(freq*x + off + math.pi)) for x in range(0, w+step, step)]
         for i in range(len(pts1)-1):
             c.create_line(pts1[i][0], pts1[i][1], pts1[i+1][0], pts1[i+1][1],
@@ -166,54 +170,106 @@ class DNAAnalyzerApp:
         self._dna_offset -= 0.04
         self.root.after(40, self._animate_dna)
 
+    # ── Analyse dans un thread séparé (UI reste réactive) ─────
     def _run_analysis(self, seq=None, options=None):
+        if self._analysis_running:
+            self._set_status('⚠️  Analyse déjà en cours…')
+            return
+
         if seq is None:
             seq = self.input_frame.get_sequence()
         if not seq or len(seq) < 20:
-            messagebox.showwarning('Séquence invalide',
-                                   'Minimum 20 nucléotides requis.')
+            messagebox.showwarning('Séquence invalide', 'Minimum 20 nucléotides requis.')
             return
         if options is None:
             options = self.input_frame.get_options()
-        self._set_status('⏳  Analyse en cours…')
-        self.root.update_idletasks()
+
+        self._analysis_running = True
+        seq = seq.upper().replace(' ', '').replace('\n', '')
+
+        def _worker():
+            try:
+                results = {}
+                min_orf = options.get('min_orf', 30)
+
+                self.root.after(0, lambda: self._set_status(
+                    f'⏳  Cadres de lecture… ({len(seq)} pb)'))
+                results['reading_frames'] = find_reading_frames(seq, min_length=min_orf)
+                results['min_orf'] = min_orf
+
+                self.root.after(0, lambda: self._set_status('⏳  Recherche ORFs…'))
+                results['orfs'] = (find_orfs(seq, min_length=min_orf)
+                                   if options.get('ORFs', True) else [])
+
+                self.root.after(0, lambda: self._set_status('⏳  Promoteurs…'))
+                pd = (find_promoters(seq)
+                      if options.get('Promoteurs', True)
+                      else {'promoters': [], 'box10': [], 'box35': []})
+                results['promoters'] = pd['promoters']
+                results['box10']     = pd['box10']
+                results['box35']     = pd['box35']
+
+                self.root.after(0, lambda: self._set_status('⏳  Shine-Dalgarno…'))
+                results['sd_sites'] = (find_shine_dalgarno(seq)
+                                       if options.get('Shine-Dalgarno', True) else [])
+
+                self.root.after(0, lambda: self._set_status('⏳  Terminateurs…'))
+                results['terminators'] = (find_terminators(seq)
+                                          if options.get('Terminateurs', True) else [])
+
+                self.root.after(0, lambda: self._set_status('⏳  Sites de restriction…'))
+                results['restriction'] = (find_restriction_sites(seq, RESTRICTION_SITES)
+                                          if options.get('Restriction', True) else {})
+
+                stats = nucleotide_composition(seq)
+                stats['tm_wallace'] = calc_tm_wallace(seq)
+                stats['tm_nn']      = calc_tm_nearest_neighbor(seq)
+                stats['mw_ss']      = molecular_weight(seq, double_stranded=False)
+                stats['mw_ds']      = molecular_weight(seq, double_stranded=True)
+                results['stats']      = stats
+                results['seq']        = seq
+                results['seq_length'] = len(seq)
+                results['gc_pct']     = stats['gc']
+
+                # Retour dans le thread principal pour l'affichage Tkinter
+                self.root.after(0, lambda: self._finish_analysis(results))
+
+            except Exception:
+                import traceback
+                err = traceback.format_exc()
+                self.root.after(0, lambda: self._analysis_error(err))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _finish_analysis(self, results):
         try:
-            results = {}
-            seq = seq.upper().replace(' ', '').replace('\n', '')
-            min_orf = options.get('min_orf', 90)
-            results['orfs'] = find_orfs(seq, min_length=min_orf) if options.get('ORFs', True) else []
-            pd = find_promoters(seq) if options.get('Promoteurs', True) else {'promoters':[],'box10':[],'box35':[]}
-            results['promoters'] = pd['promoters']
-            results['box10']     = pd['box10']
-            results['box35']     = pd['box35']
-            results['sd_sites']    = find_shine_dalgarno(seq) if options.get('Shine-Dalgarno', True) else []
-            results['terminators'] = find_terminators(seq)    if options.get('Terminateurs', True)   else []
-            results['restriction'] = find_restriction_sites(seq, RESTRICTION_SITES) if options.get('Restriction', True) else {}
-            stats = nucleotide_composition(seq)
-            stats['tm_wallace'] = calc_tm_wallace(seq)
-            stats['tm_nn']      = calc_tm_nearest_neighbor(seq)
-            stats['mw_ss']      = molecular_weight(seq, double_stranded=False)
-            stats['mw_ds']      = molecular_weight(seq, double_stranded=True)
-            results['stats']      = stats
-            results['seq']        = seq
-            results['seq_length'] = len(seq)
-            results['gc_pct']     = stats['gc']
             self.results = results
+            self._set_status('⏳  Affichage des résultats…')
             self.results_frame.display(results)
-            self.visualize_frame.draw(seq, results)
+            self.visualize_frame.draw(results['seq'], results)
             total = (len(results['orfs']) + len(results['promoters']) +
                      len(results['sd_sites']) + len(results['terminators']))
-            self._set_status(f'✓  Analyse terminée — {total} éléments détectés')
-        except Exception as e:
-            messagebox.showerror('Erreur', str(e))
-            self._set_status('❌  Erreur')
+            self._set_status(
+                f'✓  Terminé — {total} éléments  |  {len(results["seq"])} pb')
+        except Exception:
+            import traceback
+            self._set_status('❌  Erreur affichage')
+            messagebox.showerror('Erreur affichage', traceback.format_exc())
+        finally:
+            self._analysis_running = False
+
+    def _analysis_error(self, err):
+        self._analysis_running = False
+        self._set_status('❌  Erreur lors de l\'analyse')
+        messagebox.showerror('Erreur analyse', err)
 
     def _set_status(self, msg):
         self.status_label.config(text=msg)
         self.root.update_idletasks()
 
     def _open_file(self):
-        path = filedialog.askopenfilename(filetypes=[('FASTA', '*.fasta *.fa *.txt *.seq'), ('Tous', '*.*')])
+        path = filedialog.askopenfilename(
+            filetypes=[('FASTA', '*.fasta *.fa *.txt *.seq'), ('Tous', '*.*')])
         if path:
             with open(path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
@@ -230,8 +286,9 @@ class DNAAnalyzerApp:
         if not self.results:
             messagebox.showinfo('Aucun résultat', 'Lancez d\'abord une analyse.')
             return
-        exts = {'csv':'.csv','excel':'.xlsx','json':'.json','txt':'.txt','fasta':'.fasta'}
-        path = filedialog.asksaveasfilename(defaultextension=exts.get(fmt,'.txt'))
+        exts = {'csv': '.csv', 'excel': '.xlsx', 'json': '.json',
+                'txt': '.txt', 'fasta': '.fasta'}
+        path = filedialog.asksaveasfilename(defaultextension=exts.get(fmt, '.txt'))
         if not path:
             return
         try:
