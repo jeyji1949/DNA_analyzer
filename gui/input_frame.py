@@ -145,9 +145,25 @@ class InputFrame(tk.Frame):
             command=self._run,          # <-- connexion correcte
             bd=0
         )
-        run_btn.pack(fill='x', padx=10, ipady=10, pady=(4, 12))
+        run_btn.pack(fill='x', padx=10, ipady=10, pady=(4, 4))
         run_btn.bind('<Enter>', lambda e: run_btn.config(bg='#145C38'))
         run_btn.bind('<Leave>', lambda e: run_btn.config(bg=ACCENT))
+
+        # Bouton schéma double brin
+        schema_btn = tk.Button(
+            content,
+            text='🧬  SCHÉMA DOUBLE BRIN',
+            bg='#2196A6', fg='#FFFFFF',
+            font=('Georgia', 10, 'bold'),
+            relief='flat', cursor='hand2',
+            activebackground='#1565A0',
+            activeforeground='#FFFFFF',
+            command=self._open_schema,
+            bd=0
+        )
+        schema_btn.pack(fill='x', padx=10, ipady=8, pady=(0, 12))
+        schema_btn.bind('<Enter>', lambda e: schema_btn.config(bg='#1565A0'))
+        schema_btn.bind('<Leave>', lambda e: schema_btn.config(bg='#2196A6'))
 
     # ── Bande décorative latérale avec motifs biologiques ─────
     def _draw_bio_side(self):
@@ -211,14 +227,31 @@ class InputFrame(tk.Frame):
 
     def _update_stats(self, event=None):
         seq = self.get_sequence()
+        # Effacer erreur inline quand l'utilisateur tape
+        self._clear_error()
+
         if not seq:
-            self.stats_label.config(text='')
+            self.stats_label.config(text='', fg=FG_DIM)
+            self.seq_text.config(highlightbackground=BORDER)
             return
-        a, t, g, c_ = seq.count('A'), seq.count('T'), seq.count('G'), seq.count('C')
-        gc = (g + c_) / len(seq) * 100
-        self.stats_label.config(
-            text=f'{len(seq)} pb  •  GC: {gc:.1f}%  •  A:{a}  T:{t}  G:{g}  C:{c_}'
-        )
+
+        import re
+        invalid = set(re.sub('[ATCG]', '', seq))
+        if invalid:
+            chars = ' '.join(sorted(invalid))
+            self.stats_label.config(
+                text=f'⚠  Caractères invalides détectés : {chars}',
+                fg='#C0392B'
+            )
+            self.seq_text.config(highlightbackground='#F1948A')
+        else:
+            a, t, g, c_ = seq.count('A'), seq.count('T'), seq.count('G'), seq.count('C')
+            gc = (g + c_) / len(seq) * 100
+            self.stats_label.config(
+                text=f'{len(seq)} pb  •  GC: {gc:.1f}%  •  A:{a}  T:{t}  G:{g}  C:{c_}',
+                fg=FG_DIM
+            )
+            self.seq_text.config(highlightbackground=BORDER)
 
     def _import_fasta(self):
         path = filedialog.askopenfilename(
@@ -243,7 +276,77 @@ class InputFrame(tk.Frame):
     def _run(self):
         seq  = self.get_sequence()
         opts = self.get_options()
+
+        # ── Validation 1 : séquence non vide ──────────────────
+        if not seq:
+            self._show_error('⚠  Séquence vide !',
+                             'Veuillez entrer ou importer une séquence ADN avant de lancer l\'analyse.')
+            return
+
+        # ── Validation 2 : séquence trop courte ───────────────
+        if len(seq) < 15:
+            self._show_error('⚠  Séquence trop courte',
+                             f"La séquence ne contient que {len(seq)} nucléotide(s).\n"
+                             "Minimum requis : 15 nucléotides.")
+            return
+
+        # ── Validation 3 : caractères non-ATCG ───────────────
+        import re
+        invalid = set(re.sub('[ATCG]', '', seq))
+        if invalid:
+            chars = ', '.join(sorted(invalid))
+            self._show_error('⚠  Caractères invalides',
+                             f'La séquence contient des caractères non reconnus :\n'
+                             f'  {chars}\n\n'
+                             f'Seuls les nucléotides A, T, C, G sont acceptés.')
+            return
+
         self.callback(seq, opts)
+
+    def _show_error(self, title, message):
+        """Affiche une erreur inline sous le bouton."""
+        # Nettoyer l'ancien message s'il existe
+        if hasattr(self, '_err_label') and self._err_label.winfo_exists():
+            self._err_label.destroy()
+        if hasattr(self, '_err_frame') and self._err_frame.winfo_exists():
+            self._err_frame.destroy()
+
+        # Trouver le parent du bouton (content frame)
+        parent = self.seq_text.master.master.master   # txt_inner -> txt_outer -> content -> outer
+
+        self._err_frame = tk.Frame(parent, bg='#FADBD8',
+                                   highlightthickness=1,
+                                   highlightbackground='#F1948A')
+        self._err_frame.pack(fill='x', padx=10, pady=(0, 4))
+
+        tk.Label(self._err_frame, text=title, bg='#FADBD8', fg='#922B21',
+                 font=('Georgia', 9, 'bold'), padx=8, pady=4).pack(anchor='w')
+        tk.Label(self._err_frame, text=message, bg='#FADBD8', fg='#C0392B',
+                 font=('Georgia', 8), padx=8, pady=2,
+                 justify='left').pack(anchor='w')
+
+        # Auto-disparaître après 5 secondes
+        self._err_frame.after(5000, self._clear_error)
+
+    def _clear_error(self):
+        if hasattr(self, '_err_frame') and self._err_frame.winfo_exists():
+            self._err_frame.destroy()
+
+    def _open_schema(self):
+        """Ouvre la fenêtre schéma double brin."""
+        seq = self.get_sequence()
+        if not seq:
+            self._show_error('⚠  Séquence vide !',
+                             'Entrez une séquence avant d\'ouvrir le schéma.')
+            return
+        import re
+        invalid = set(re.sub('[ATCG]', '', seq))
+        if invalid:
+            self._show_error('⚠  Caractères invalides',
+                             f'Séquence contient: {", ".join(sorted(invalid))}')
+            return
+        from gui.dual_strand_window import DualStrandWindow
+        DualStrandWindow(self.winfo_toplevel(), seq, {})
 
     # ── Interface publique ─────────────────────────────────────
     def get_sequence(self):
