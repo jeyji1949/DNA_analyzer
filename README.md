@@ -1,441 +1,323 @@
-# 🧬 DNA Analyzer — BioSeq Lab
+# BioVision Lab
 
-> Application Python d'analyse bioinformatique de séquences ADN bactériennes.
-> Interface graphique complète, analyse double brin, 7 types d'analyses, visualisations interactives et export multi-format.
-
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
-![Tkinter](https://img.shields.io/badge/GUI-Tkinter-1B7A4A?style=flat-square)
-![Matplotlib](https://img.shields.io/badge/Plots-Matplotlib-orange?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+> Pipeline d'analyse d'image microscopique
+> Bioinformatique & IA pour la Médecine de Précision  
 
 ---
 
-## 📋 Table des matières
+## Description
 
-- [Aperçu](#-aperçu)
-- [Fonctionnalités](#-fonctionnalités)
-- [Nouveautés & Améliorations](#-nouveautés--améliorations)
-- [Structure du projet](#-structure-du-projet)
-- [Installation](#-installation)
-- [Lancement](#-lancement)
-- [Guide d'utilisation](#-guide-dutilisation)
-- [Analyse Double Brin](#-analyse-double-brin-nouvelle-fonctionnalité)
-- [Description des analyses](#-description-des-analyses)
-- [Export des résultats](#-export-des-résultats)
-- [Architecture technique](#-architecture-technique)
-- [Dépendances](#-dépendances)
+BioVision Lab est une application desktop **Python/Tkinter** de traitement d'image médicale et microscopique. Elle implémente un pipeline d'analyse biologique en **6 étapes séquentielles**, avec tous les algorithmes codés **manuellement en NumPy** — sans OpenCV, scipy.ndimage, ni aucune bibliothèque de traitement d'image haut niveau.
+
+L'interface est organisée comme un vrai workflow d'analyse cellulaire : chaque étape produit un résultat qui devient l'entrée de l'étape suivante, jusqu'à un rapport final généré par intelligence artificielle.
 
 ---
 
-## 🔭 Aperçu
-
-DNA Analyzer est une application de bureau développée en **Python / Tkinter** permettant d'analyser des séquences ADN bactériennes à partir d'une saisie directe ou d'un fichier FASTA.
-
-Elle couvre les analyses bioinformatiques fondamentales avec une architecture modulaire :
-
-- **Détection des ORFs** sur les 6 cadres de lecture depuis le 1er nucléotide (brin sens et antisens)
-- **Identification de l'ORF codant** le plus probable avec score /100 et traduction protéique
-- **Analyse double brin simultanée** avec schéma visuel coloré et résultat optimal
-- **Recherche de motifs régulateurs** : promoteurs (-10 / -35), terminateurs Rho-indépendants GC-riches, Shine-Dalgarno
-- **Analyses physico-chimiques** : GC%, Tm, masse moléculaire
-- **Visualisations graphiques** interactives via Matplotlib
-- **Export** CSV, Excel, JSON, TXT, FASTA
-
----
-
-## ✨ Fonctionnalités
-
-### Analyses biologiques
-| Analyse | Description |
-|---|---|
-| 📋 Cadres de lecture | Segmentation codon par codon sur les 6 frames depuis le 1er nucléotide |
-| 🏆 ORF codant | Score /100 : longueur, ATG, taille protéique, brin, stop — meilleur candidat identifié |
-| ⚙️ Traduction protéique | Traduction de l'ORF principal, colorée par propriété biochimique |
-| 📍 Promoteurs | Pairs Box-35 / Box-10 avec tolérance aux mismatches |
-| 🎯 Shine-Dalgarno | Consensus AGGAGG localisé 7–9 pb en amont d'ATG |
-| 🔚 Terminateurs | Structures tige-boucle **riches en GC** (tige ≥ 50% GC) + polyT |
-| ✂️ Sites de restriction | 15 enzymes courantes (EcoRI, BamHI, HindIII…) |
-| 📊 Statistiques | GC%, Tm Wallace, Tm Nearest-Neighbor, masse moléculaire |
-
-### Interface & usabilité
-- Interface graphique avec **thème biologique** (palette verte émeraude)
-- Animation ADN double hélice en temps réel dans la barre de titre
-- **Validation des entrées** en temps réel (vide, trop court, caractères non-ATCG)
-- **Analyse threadée** — UI non bloquante sur les longues séquences FASTA
-- Import de fichiers FASTA (`.fasta`, `.fa`, `.txt`, `.seq`)
-- Calcul du **brin complémentaire inverse** en un clic
-- Seuil de longueur minimum des ORFs configurable (défaut : 30 pb)
-
----
-
-## 🆕 Nouveautés & Améliorations
-
-### Correctifs critiques
-
-**Correctif A1 — Bouton d'analyse**
-Le bouton `LANCER L'ANALYSE` manquait son argument `command=self._run` et ne répondait pas aux clics. Corrigé dans `gui/input_frame.py`.
-
-**Correctif A2 — Seuil longueur minimale ORF**
-La valeur par défaut (90 pb) était trop restrictive pour les séquences courtes. Réduite à **30 pb** dans `orf_finder.py` et `input_frame.py`.
-
-### Nouvelles fonctionnalités
-
-**Amélioration A3 — Validation des entrées utilisateur**
-Trois vérifications avant toute analyse :
-- Séquence vide → message d'erreur rouge inline
-- Séquence < 15 nucléotides → avertissement avec la longueur
-- Caractères non-ATCG → liste des caractères invalides
-
-Validation aussi **en temps réel** pendant la saisie (bordure rouge si caractères invalides). Les messages disparaissent automatiquement après 5 secondes.
-
-**Amélioration A4 — Refonte des onglets ORF**
-Deux nouveaux onglets distincts remplacent l'onglet ORF unique :
-- **📋 Cadres de lecture** : tous les segments entre codons stop sur les 6 cadres depuis le 1er nucléotide, avec indication de la présence d'un ATG
-- **🏆 ORF Codant** : meilleur candidat avec score /100, justification détaillée, séquence ADN colorée et protéine traduite
-
-**Amélioration A5 — Filtre biologique des terminateurs**
-Les terminateurs Rho-indépendants actifs ont une tige riche en G-C. Seuls les terminateurs avec **GC tige ≥ 50%** sont retenus dans les analyses principales (les autres restent disponibles en fallback).
-
-**Amélioration A6 — Fenêtre Analyse Double Brin** ⭐
-Voir la section dédiée ci-dessous.
-
----
-
-## 📁 Structure du projet
+## Pipeline complet
 
 ```
-dna_analyzer/
-│
-├── main.py                    # Point d'entrée — lancer avec : python main.py
-│
-├── analysis/
-│   ├── __init__.py
-│   ├── orf_finder.py          # ORFs 6 frames + score codant [AMÉLIORÉ]
-│   ├── motif_finder.py        # Promoteurs, SD, terminateurs GC-riche, restriction
-│   └── statistics.py         # Composition, Tm, masse moléculaire, GC glissant
-│
-├── data/
-│   ├── __init__.py
-│   └── codon_table.py        # Table des codons + sites de restriction
-│
-├── gui/
-│   ├── __init__.py
-│   ├── app.py                # Fenêtre principale + orchestration analyses [AMÉLIORÉ]
-│   ├── input_frame.py        # Saisie, validation, boutons action [AMÉLIORÉ]
-│   ├── results_frame.py      # 7 onglets de résultats [AMÉLIORÉ]
-│   ├── visualize_frame.py    # Graphiques Matplotlib
-│   └── dual_strand_window.py # Fenêtre analyse double brin [NOUVEAU]
-│
-├── export/
-│   ├── __init__.py
-│   └── exporter.py           # Export CSV, Excel, JSON, TXT, FASTA
-│
-└── requirements.txt          # Dépendances Python
+Image microscopique
+       │
+       ▼
+┌─────────────────────────────────────────────────────┐
+│  Étape 01 — Prétraitement & Débruitage  (M1)        │
+│  Bruit S&P / Gaussien → Filtre médian / gaussien    │
+│  Recommandation automatique filtre selon bruit      │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Étape 02 — Histogramme & Contraste     (M2)        │
+│  Étirement · Égalisation · Seuillage                │
+│  Statistiques + visualisation matplotlib            │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Étape 03 — Transformée de Fourier      (M3)        │
+│  FFT Cooley-Tukey 2D from scratch                   │
+│  Passe-bas · Passe-haut · Passe-bande               │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Étape 04 — Morphologie & Segmentation  (M4)        │
+│  Érosion · Dilatation · Opening · Closing           │
+│  Top Hat · Black Hat · Gradient · Comptage          │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Étape 05 — Rapport d'analyse                       │
+│  Résumé des 4 étapes · Statistiques comparées       │
+│  Comparaison avant/après · Bilan global             │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Étape 06 — IA & Prédiction                         │
+│  Chat interactif · Identification type d'image      │
+│  Rapport médical · Suggestions d'amélioration       │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🛠 Installation
+## Fonctionnalités
 
-### Prérequis
+### Module 1 — Prétraitement (`core/filters.py`)
 
-- Python **3.10 ou supérieur**
-- `pip` à jour
+| Opération | Description | Usage microscopique |
+|-----------|-------------|---------------------|
+| Bruit Poivre & Sel | Pixels aléatoires 0/255 (boucle manuelle) | Simulation capteur CCD défectueux |
+| Bruit Gaussien | Box-Muller transform, pixel par pixel | Simulation bruit thermique |
+| Filtre Médian | Tri de fenêtre glissante, sans bibliothèque | Éliminer S&P sans flouter les contours |
+| Filtre Gaussien | Noyau analytique + convolution 2D manuelle | Lisser le bruit continu (fluorescence) |
+| Filtre Moyenneur | Convolution avec noyau uniforme | Lissage rapide, prévisualisation |
+| Filtre Laplacien | Noyau `[[0,-1,0],[-1,4,-1],[0,-1,0]]` | Détecter membranes et filaments |
 
-### 1. Cloner le dépôt
+**Recommandation automatique** : Poivre & Sel → filtre médian pré-sélectionné (badge vert). Bruit Gaussien → filtre gaussien.  
+**Affichage** : 3 panneaux — image originale | image bruitée | image filtrée.
+
+---
+
+### Module 2 — Histogramme (`core/histogram.py`)
+
+| Opération | Formule | Usage microscopique |
+|-----------|---------|---------------------|
+| Histogramme | Comptage manuel par boucle, bins 16–256 | Diagnostiquer l'exposition |
+| Étirement de contraste | `(I - min) / (max - min) × 255` | Corriger image pâle |
+| Égalisation | CDF : `T(r) = round((L-1) × CDF(r) / N)` | Révéler détails cachés (fluorescence) |
+| Seuillage binaire | `255 si I ≥ seuil, sinon 0` | Préparer la segmentation |
+
+**Statistiques** : min, max, moyenne, écart-type, entropie de Shannon (bits).  
+**Interprétation biologique** affichée automatiquement pour chaque opération.
+
+---
+
+### Module 3 — Transformée de Fourier (`core/fft_manual.py`)
+
+Implémentation **100% from scratch** — aucune utilisation de `numpy.fft` :
+
+```
+fft1d()               — Bit-reversal + butterfly O(N log N)
+fft2d()               — Décomposition ligne/colonne
+ifft2d()              — FFT inverse pour reconstruction
+fft_shift()           — Centrage des basses fréquences
+apply_frequency_mask()— Masques circulaires passe-bas/haut/bande
+spectrum_image()      — Visualisation spectre (log scale)
+```
+
+| Filtre | Rayon conseillé | Usage microscopique |
+|--------|-----------------|---------------------|
+| Spectre | — | Diagnostiquer artéfacts périodiques |
+| Passe-bas | R = 20–40 | Lisser bruit haute fréquence |
+| Passe-haut | R = 20–40 | Renforcer contours, détecter membranes |
+| Passe-bande | R = 15–30 | Isoler granules, séparer noyau/cytoplasme |
+
+---
+
+### Module 4 — Morphologie (`core/morpho.py`)
+
+| Opération | Formule | Usage microscopique |
+|-----------|---------|---------------------|
+| Érosion | `min` voisinage 3×3 | Séparer cellules jointives |
+| Dilatation | `max` voisinage 3×3 | Fermer lacunes membranaires |
+| Opening | `Dilate(Erode(A))` | Supprimer bruit binaire avant comptage |
+| Closing | `Erode(Dilate(A))` | Reconstruire noyaux fragmentés |
+| Top Hat | `A - Opening(A)` | Extraire granules cytoplasmiques |
+| Black Hat | `Closing(A) - A` | Détecter vacuoles et inclusions |
+| Gradient | `Dilate(A) - Erode(A)` | Tracer membranes cellulaires |
+
+**Comptage** : flood fill 4-connexe → nombre d'objets + aire moyenne en px².  
+**Rapport** : bouton "Générer rapport complet" → bilan de l'analyse.
+
+---
+
+### Module 5 — Rapport d'analyse (`ui/report_panel.py`)
+
+Panel de synthèse automatique à la fin du pipeline :
+
+- **Comparaison visuelle** : image originale vs résultat final côte à côte
+- **Résumé des 4 étapes** : opération + paramètres + interprétation biologique par module
+- **Statistiques comparées** : tableau min/max/moyenne/écart-type/entropie à chaque étape
+- **Histogrammes comparés** : original vs résultat final
+- **Bilan global** : 4 métriques clés + interprétation textuelle automatique avec recommandations
+
+Se rafraîchit automatiquement à chaque navigation vers l'étape 05.
+
+---
+
+### Module 6 — IA & Prédiction (`ui/ai_panel.py`)
+
+Chat interactif avec un LLM analysant les résultats du pipeline :
+
+**L'IA reçoit automatiquement :** toutes les statistiques, les paramètres utilisés, les logs de chaque module et les résultats de comptage cellulaire.
+
+**5 analyses rapides disponibles :**
+- Analyser le pipeline complet
+- Identifier le type d'image biologique
+- Suggérer des améliorations
+- Générer un rapport médical complet
+- Évaluer la qualité du traitement
+
+**Fournisseurs supportés :**
+
+| Fournisseur | Modèle par défaut | Coût |
+|-------------|-------------------|------|
+| OpenRouter (recommandé) | `arcee-ai/trinity-large-preview:free` | Gratuit |
+| Gemini Flash (Google) | `gemini-2.0-flash` | Gratuit (15 req/min) |
+| Claude (Anthropic) | `claude-haiku-4-5-20251001` | Payant |
+
+**Modèles gratuits OpenRouter** (une seule clé `sk-or-v1-...` pour tous) :
+
+```
+arcee-ai/trinity-large-preview:free      ← recommandé, fonctionne bien
+meta-llama/llama-3.2-3b-instruct:free
+google/gemma-3-4b-it:free
+google/gemma-3-12b-it:free
+mistralai/mistral-small-3.1-24b-instruct:free
+qwen/qwen-2.5-72b-instruct:free
+deepseek/deepseek-r1:free
+```
+
+---
+
+## Architecture
+
+```
+biovision_lab/
+│
+├── main.py                     # Point d'entrée
+├── requirements.txt
+│
+├── app/
+│   ├── state.py                # AppState : pixels, logs M1-M4, steps_done[6]
+│   └── main_window.py          # Fenêtre principale + barre pipeline 6 étapes
+│
+├── core/                       # Algorithmes purs — zéro tkinter, zéro OpenCV
+│   ├── histogram.py
+│   ├── filters.py
+│   ├── fft_manual.py
+│   └── morpho.py
+│
+├── ui/                         # Panels Tkinter
+│   ├── filter_panel.py         # M1
+│   ├── hist_panel.py           # M2
+│   ├── fourier_panel.py        # M3
+│   ├── morpho_panel.py         # M4
+│   ├── report_panel.py         # M5 — rapport synthèse
+│   └── ai_panel.py             # M6 — chat IA multi-fournisseurs
+│
+└── assets/
+    ├── guide_utilisation.docx
+    ├── README.docx
+    └── samples/
+```
+
+### Règle de dépendance
+
+```
+main.py → app/main_window.py → ui/*_panel.py → core/*.py
+```
+
+`core/` ne contient **jamais** `import tkinter`. Le module IA utilise uniquement `urllib` (stdlib).
+
+### AppState — pipeline de données
+
+```python
+AppState
+├── original_pixels              # Image source
+├── m1_result / m2_result / m3_result / m4_result
+├── m1_log / m2_log / m3_log / m4_log   # Paramètres de chaque module
+└── steps_done[6]                # Flags de complétion
+
+pipeline_input(step)  # remonte automatiquement la meilleure entrée disponible
+```
+
+---
+
+## Installation
 
 ```bash
-git clone https://github.com/votre-utilisateur/dna_analyzer.git
-cd dna_analyzer
-```
+# Prérequis : Python 3.8+
+pip install numpy pillow matplotlib
 
-### 2. Créer un environnement virtuel (recommandé)
-
-```bash
-python -m venv bioenv
-source bioenv/bin/activate        # Linux / macOS
-bioenv\Scripts\activate           # Windows
-```
-
-### 3. Installer les dépendances
-
-```bash
-pip install -r requirements.txt
-```
-
-#### Dépendances principales
-
-```
-matplotlib>=3.7.0
-openpyxl>=3.1.0
-```
-
-> **Note** : `tkinter` est inclus avec Python standard.
-> Sur Ubuntu/Debian, si tkinter est manquant :
-> ```bash
-> sudo apt install python3-tk
-> ```
-
----
-
-## 🚀 Lancement
-
-```bash
+# Lancer
 python main.py
 ```
 
-L'interface s'ouvre avec une séquence de démonstration pré-chargée, prête à être analysée.
+### Dépendances
+
+| Package | Usage | Version |
+|---------|-------|---------|
+| `numpy` | Base de tous les algorithmes | ≥ 1.20 |
+| `pillow` | Chargement et affichage images | ≥ 9.0 |
+| `matplotlib` | Histogramme M2 | ≥ 3.5 |
+| `tkinter` | Interface graphique | stdlib |
+| `urllib` | Appels API IA (M6) | stdlib |
 
 ---
 
-## 📖 Guide d'utilisation
+## Utilisation rapide
 
-### Panneau gauche — Saisie
+1. `python main.py`
+2. **"Charger un échantillon"** → PNG/JPG/TIFF
+3. **Étape 01** : choisir bruit → filtre recommandé s'active → Appliquer
+4. **Étape 02** : choisir opération → Calculer
+5. **Étape 03** : choisir filtre → Calculer FFT
+6. **Étape 04** : choisir opération morpho → Appliquer → voir comptage
+7. **Étape 05** : cliquer "Actualiser" → rapport synthèse
+8. **Étape 06** : entrer clé OpenRouter → analyses rapides IA
 
-```
-┌─────────────────────────────────┐
-│  Séquence ADN (5'→3')           │
-│  ┌───────────────────────────┐  │
-│  │ ATGCCCGGGTAA...           │  │
-│  └───────────────────────────┘  │
-│  300 pb  •  GC: 48.3%           │
-│                                 │
-│  [📁 Importer FASTA] [↔ RC] [✕] │
-│                                 │
-│  Analyses à effectuer :         │
-│  ☑ Détection ORFs (6 cadres)    │
-│  ☑ Promoteurs -10 / -35         │
-│  ☑ Shine-Dalgarno               │
-│  ☑ Terminateurs Rho-indép.      │
-│  ☑ Sites de restriction         │
-│                                 │
-│  Longueur min. ORF (pb) : [30]  │
-│                                 │
-│  [▶  LANCER L'ANALYSE]          │
-│  [🧬  SCHÉMA DOUBLE BRIN]       │
-└─────────────────────────────────┘
-```
+### Obtenir une clé API gratuite (module IA)
 
-| Élément | Rôle |
-|---|---|
-| Zone de texte | Coller la séquence ADN directement (ATCG uniquement) — validation en temps réel |
-| `📁 Importer FASTA` | Charger un fichier FASTA — les lignes `>` sont ignorées |
-| `↔ RC` | Remplace la séquence par son brin complémentaire inverse |
-| `✕` | Efface la zone de saisie |
-| Cases à cocher | Activer/désactiver chaque analyse individuellement |
-| Longueur min. ORF | Seuil en pb — `30` pour tous les ORFs, `90+` pour les candidats biologiques |
-| `▶ LANCER L'ANALYSE` | Démarre l'analyse avec validation des entrées |
-| `🧬 SCHÉMA DOUBLE BRIN` | **[NOUVEAU]** Ouvre la fenêtre d'analyse visuelle des 2 brins |
+1. [openrouter.ai](https://openrouter.ai) → créer un compte
+2. **Keys** → **Create Key**
+3. Clé `sk-or-v1-...` → coller dans la sidebar Étape 06
+4. Une seule clé = accès à tous les modèles gratuits
 
-> **Validation automatique :** si la séquence est vide, trop courte ou contient des caractères non-ATCG, un message d'erreur rouge s'affiche et l'analyse ne démarre pas.
+### Types d'images recommandées
+
+| Type | Format | Résolution |
+|------|--------|------------|
+| Coupes histologiques (HES, Giemsa) | PNG, TIFF | 512×512 à 1024×1024 |
+| Microscopie optique | PNG, JPG | 256×256 à 512×512 |
+| Fluorescence (DAPI, GFP) | TIFF, PNG | 512×512 |
+| Images bactériologiques | PNG, JPG | 256×256 à 512×512 |
+
+> ⚠️ Images > 2000 px : recadrer avant traitement (FFT très lente).
 
 ---
 
-### Panneau droit — Onglets de résultats
-
-#### 📋 Cadres de lecture *(nouveau)*
-Affiche tous les segments entre codons stop sur les **6 cadres de lecture** en partant du 1er nucléotide, sur les deux brins. Chaque ligne indique :
-- Cadre (+1 à +3 sens, -1 à -3 antisens) et brin
-- Position de début et de fin (1-based)
-- Longueur en pb, nombre d'acides aminés
-- Présence d'un ATG interne (★)
-- Codon stop terminal
-
-Le **meilleur segment** (plus long avec ATG) est surligné en vert.
-
-#### 🏆 ORF Codant *(nouveau)*
-Identifie le meilleur candidat codant avec :
-- **Score /100** calculé sur 7 critères biologiques
-- Justification détaillée point par point
-- Cartes de résumé : cadre, brin, position, longueur, ATG, stop, masse moléculaire
-- Séquence ADN de l'ORF (par triplets)
-- Protéine traduite colorée (hydrophobe/polaire/chargé/autre)
-- Classement des 10 meilleurs candidats
-
-#### 📍 Promoteurs
-Tableau des paires Box-35 / Box-10 détectées. Niveaux de qualité : `Consensus parfait` > `Fort` > `Modéré` > `Faible`.
-
-#### 🎯 Shine-Dalgarno
-Sites SD localisés avec leur ATG associé, espacement et nombre de mismatches.
-
-#### 🔚 Terminateurs
-Structures tige-boucle (GC-riches) + polyT. Colonnes : position, Bras1, Boucle, Bras2, PolyT, longueur tige.
-
-#### ✂️ Restriction
-Enzymes présentes dans la séquence, nombre de coupures et positions 1-based.
-
-#### 📊 Statistiques
-Longueur, GC%, AT%, ratio G/C, Tm Wallace, Tm Nearest-Neighbor, masse moléculaire ss/ds, barre de composition visuelle colorée.
-
----
-
-## 🧬 Analyse Double Brin *(nouvelle fonctionnalité)*
-
-Accessible via le bouton **"🧬 SCHÉMA DOUBLE BRIN"** dans le panneau gauche.
-
-### Principe biologique
-Une molécule d'ADN double brin possède deux orientations de lecture :
-- **Brin sens 5'→3' (+)** — la séquence telle que saisie
-- **Brin antisens 3'→5' (-)** — le brin complémentaire inverse
-
-Un gène peut être codé sur l'un ou l'autre brin. Cette fenêtre analyse **simultanément** les deux orientations et identifie le meilleur candidat.
-
-### Onglets de la fenêtre
-
-#### 📊 Carte Double Brin
-Représentation linéaire des deux brins sur deux axes Matplotlib superposés, dans le même style que la carte de séquence principale :
-- 🟩 **Rectangles verts/teal** — ORFs (or pour le meilleur)
-- 🔵 **Lignes bleues** — promoteurs Box-35
-- 🔴 **Lignes rouges** — promoteurs Box-10
-- 🟠 **Zones orange** — terminateurs GC-riches
-- 🔺 **Triangles violets** — sites Shine-Dalgarno
-- Barre d'outils Matplotlib (zoom, sauvegarde PNG)
-
-#### 🔤 Séquence Brin + et Brin −
-Chaque nucléotide est coloré selon sa fonction biologique :
-
-| Couleur | Élément |
-|---|---|
-| Vert foncé `#A9DFBF` | ORF meilleur candidat |
-| Vert pâle `#D5F5E3` | ORF classique |
-| Bleu pâle `#AED6F1` | Promoteur Box -35 |
-| Rouge pâle `#F5B7B1` | Promoteur Box -10 |
-| Orange pâle `#FDEBD0` | Terminateur Rho-indépendant (GC-riche) |
-| Violet pâle `#E8DAEF` | Site Shine-Dalgarno |
-| **Texte vert gras** | Codon ATG |
-| **Texte rouge gras** | Codon Stop |
-
-Chaque ligne de 60 bases affiche aussi les annotations de position à droite (`─35@pos`, `TERM@pos(GC:62%)`).
-
-#### ★ Résultat Optimal
-- **Bannière or** avec les 12 métriques clés du brin gagnant
-- **Mini-carte** du brin optimal avec légende
-- **Protéine traduite** colorée par propriété biochimique
-- **Tableau comparatif** brin (+) vs brin (-) avec cellules gagnantes surlignées en vert
-
----
-
-### Onglet Visualisation (panneau principal)
-
-Utiliser le menu déroulant pour choisir parmi 4 graphiques :
-
-| Graphique | Description |
-|---|---|
-| Carte de séquence | Vue linéaire avec ORFs, promoteurs, SD et terminateurs |
-| GC% (fenêtre glissante) | Courbe du taux GC sur fenêtre de 100 pb avec ligne du GC% moyen |
-| Composition nucléotidique | Histogramme + camembert A/T/G/C |
-| Longueurs des ORFs | Barres horizontales des 20 premiers ORFs, colorées par brin |
-
----
-
-## 💾 Export des résultats
-
-Accessible via **Fichier** dans la barre de menu, après avoir lancé une analyse.
-
-| Format | Contenu |
-|---|---|
-| 📊 Excel (`.xlsx`) | 6 onglets : ORFs, Promoteurs, SD, Terminateurs, Restriction, Statistiques |
-| 📄 CSV (`.csv`) | Tous les résultats dans un fichier texte tabulé |
-| 🗄️ JSON (`.json`) | Export complet structuré, idéal pour traitement programmatique |
-| 📝 Rapport TXT (`.txt`) | Rapport lisible et formaté prêt à être partagé |
-| 🧬 FASTA (`.fasta`) | Séquence analysée au format FASTA standard |
-
----
-
-## 🏗 Architecture technique
-
-### Flux de l'analyse
-
-```
-Saisie séquence
-      │
-      ▼
-input_frame.py ──► Validation (vide / trop court / non-ATCG)
-      │
-      ▼
-app.py (_run_analysis)
-      │
-      ├──► find_reading_frames()  →  find_best_coding_orf()   [6 cadres + score]
-      ├──► find_orfs()                                         [ATG→Stop classique]
-      ├──► find_promoters()                                    [Box-35 / Box-10]
-      ├──► find_shine_dalgarno()                               [AGGAGG]
-      ├──► find_terminators() + filtre GC ≥ 50%               [tige-boucle]
-      ├──► find_restriction_sites()                            [15 enzymes]
-      └──► nucleotide_composition() + Tm + MW                 [statistiques]
-               │
-               ▼
-      results_frame.display()    visualize_frame.draw()
-```
-
-### Score de potentiel codant
+## Formules implémentées
 
 ```python
-score = 0
-score += min(40, longueur_orf / longueur_seq * 200)  # longueur relative
-score += 20 if has_atg else 0                         # codon start
-score += 20 if num_aa >= 50 else 10 if num_aa >= 30 else 0  # taille
-score += 5 if strand == '+' else 0                    # brin sens
-score += 10 if stop_codon present else 0              # ORF complet
-score += 5 if '*' not in protein else 0               # pas de stop interne
-```
-
-### Threading
-
-```python
-import threading
-
-def _worker():
-    results = run_all_analyses(seq)
-    self.root.after(0, lambda: self._finish_analysis(results))
-
-threading.Thread(target=_worker, daemon=True).start()
+Y = 0.299·R + 0.587·G + 0.114·B                    # niveaux de gris
+out = (I - Imin) / (Imax - Imin) × 255             # étirement
+T(r) = round((L-1) × CDF(r) / N)                   # égalisation
+G(x,y) = exp(-(x²+y²) / 2σ²) / (2πσ²)             # noyau gaussien
+K = [[0,-1,0], [-1,4,-1], [0,-1,0]]                # laplacien
+z = √(-2·ln(u1)) × cos(2π·u2)                      # Box-Muller
+X[k] = Σ x[n]·e^(-j2πkn/N)  O(N log N)            # FFT Cooley-Tukey
+Erode  = min { A(x+i, y+j) | (i,j) ∈ B }          # érosion
+Dilate = max { A(x+i, y+j) | (i,j) ∈ B }          # dilatation
+TH(I) = I - Opening(I)                              # top hat
+H = -Σ p(i)·log₂(p(i))                             # entropie Shannon
 ```
 
 ---
 
-## 📦 Dépendances
+## Documents
 
-```
-matplotlib>=3.7.0       # Graphiques intégrés dans Tkinter
-openpyxl>=3.1.0         # Export Excel (.xlsx)
-```
-
-> Les modules `tkinter`, `threading`, `csv`, `json`, `math`, `collections` sont inclus dans la bibliothèque standard Python.
-
-Installation :
-```bash
-pip install matplotlib openpyxl
-```
+| Fichier | Contenu |
+|---------|---------|
+| `assets/guide_utilisation.docx` | Guide complet avec scénarios biologiques |
+| `assets/README.docx` | Documentation Word |
+| `explication_algorithmes.pdf` | Explication ligne par ligne de chaque algorithme |
 
 ---
 
-## 🧪 Séquence de test
+## Auteur
 
-La séquence suivante (300 pb) est utilisée comme séquence de démonstration. Elle contient un ORF principal sur le **brin antisens** (score 90/100), des promoteurs, et des terminateurs GC-riches :
-
-```
-CATTTCTCTTAAGATTTATTCTATCTTAACACAACAACTTTTAATAAAAGATATGTAGAT
-TACAATTTAAATAGATTGTAATATTTGTAACACTAACATTAATATAGTTGTTATTTTTGT
-TACATAAACCACTAATAACTCATAATCTTTTAAAACTTATATTTGAGATAACATCAACTT
-TACATTACAAGTTATAAAACAAAAGAAGTGGGACACAGAATTCGTCTTGAACACTGTGTC
-CCACCTCGTCCCCAAAACTTGCTCTGTCCGTAGAAAAATAAAAAGGGGCCCCCTTTGTTG
-```
-
-**Résultat attendu :**
-
-| Critère | Brin + | Brin − |
-|---|---|---|
-| Score codant | 76/100 | **90/100 ★** |
-| Meilleur ORF | 54 pb / 18 aa | **141 pb / 47 aa** |
-| Codon ATG | ✓ | ✓ |
-| Terminateurs GC-riche | 2 | 2 |
-
----
-
-## 👥 Auteurs
-
-Développé dans le cadre du projet **Élaboration d'une application d'analyse d'ADN** — BioSeq Lab.
-
----
-
-*DNA Analyzer — BioSeq Lab | Python / Tkinter / Matplotlib*
+**Jihane El Khraibi**  
