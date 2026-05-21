@@ -41,6 +41,9 @@ Elle couvre les analyses bioinformatiques fondamentales avec une architecture mo
 - **Visualisations graphiques** interactives via Matplotlib
 - **Export** CSV, Excel, JSON, TXT, FASTA
 
+![Interface principale — détection ORF](screenshots/screenshot_orf_main.png)
+*Interface principale : détection des ORFs sur les 6 cadres de lecture, meilleur candidat identifié (Frame +1, score ★)*
+
 ---
 
 ## ✨ Fonctionnalités
@@ -280,6 +283,9 @@ Une molécule d'ADN double brin possède deux orientations de lecture :
 
 Un gène peut être codé sur l'un ou l'autre brin. Cette fenêtre analyse **simultanément** les deux orientations et identifie le meilleur candidat.
 
+![Carte double brin — analyse simultanée des deux brins] ("2d137923-fcf8-4cee-995b-a141a202f439.png")
+*Carte linéaire des deux brins : ORFs (vert/orange), promoteurs Box-35 (bleu), Box-10 (orange), terminateurs GC-riches. Le brin sens (+) est identifié comme meilleur candidat (score 90/100).*
+
 ### Onglets de la fenêtre
 
 #### 📊 Carte Double Brin
@@ -308,6 +314,10 @@ Chaque nucléotide est coloré selon sa fonction biologique :
 Chaque ligne de 60 bases affiche aussi les annotations de position à droite (`─35@pos`, `TERM@pos(GC:62%)`).
 
 #### ★ Résultat Optimal
+
+![Résultat optimal — analyse double brin](screenshots/screenshot_optimal_result.png)
+*Résultat optimal : brin sens (+) sélectionné avec score 90/100. Tableau comparatif brin (+) vs brin (−), protéine traduite de 47 acides aminés colorée par propriété biochimique.*
+
 - **Bannière or** avec les 12 métriques clés du brin gagnant
 - **Mini-carte** du brin optimal avec légende
 - **Protéine traduite** colorée par propriété biochimique
@@ -316,6 +326,9 @@ Chaque ligne de 60 bases affiche aussi les annotations de position à droite (`�
 ---
 
 ### Onglet Visualisation (panneau principal)
+
+![Carte de séquence — vue linéaire](screenshots/screenshot_sequence_map.png)
+*Vue linéaire de la séquence (300 pb) : ORF détecté en vert (positions 202–234), promoteurs Box-35 (lignes bleues) et Box-10 (lignes orange) répartis sur la séquence.*
 
 Utiliser le menu déroulant pour choisir parmi 4 graphiques :
 
@@ -434,7 +447,7 @@ CCACCTCGTCCCCAAAACTTGCTCTGTCCGTAGAAAAATAAAAAGGGGCCCCCTTTGTTG
 
 ## 👥 Auteurs
 
-Développé dans le cadre du projet **Élaboration d'une application d'analyse d'ADN** — BioSeq Lab.
+me xoxo
 
 ---
 
