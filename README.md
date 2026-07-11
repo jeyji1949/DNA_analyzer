@@ -1,7 +1,7 @@
 # 🧬 DNA Analyzer — BioSeq Lab
 
-> Application Python d'analyse bioinformatique de séquences ADN bactériennes.
-> Interface graphique complète, analyse double brin, 7 types d'analyses, visualisations interactives et export multi-format.
+> Python application for bioinformatic analysis of bacterial DNA sequences.
+> Full graphical interface, double-strand analysis, 7 types of analyses, interactive visualizations, and multi-format export.
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![Tkinter](https://img.shields.io/badge/GUI-Tkinter-1B7A4A?style=flat-square)
@@ -10,149 +10,149 @@
 
 ---
 
-## 📋 Table des matières
+## 📋 Table of Contents
 
-- [Aperçu](#-aperçu)
-- [Fonctionnalités](#-fonctionnalités)
-- [Nouveautés & Améliorations](#-nouveautés--améliorations)
-- [Structure du projet](#-structure-du-projet)
+- [Overview](#-overview)
+- [Features](#-features)
+- [What's New & Improvements](#-whats-new--improvements)
+- [Project Structure](#-project-structure)
 - [Installation](#-installation)
-- [Lancement](#-lancement)
-- [Guide d'utilisation](#-guide-dutilisation)
-- [Analyse Double Brin](#-analyse-double-brin-nouvelle-fonctionnalité)
-- [Description des analyses](#-description-des-analyses)
-- [Export des résultats](#-export-des-résultats)
-- [Architecture technique](#-architecture-technique)
-- [Dépendances](#-dépendances)
+- [Running the App](#-running-the-app)
+- [User Guide](#-user-guide)
+- [Double-Strand Analysis](#-double-strand-analysis-new-feature)
+- [Analysis Descriptions](#-analysis-descriptions)
+- [Exporting Results](#-exporting-results)
+- [Technical Architecture](#-technical-architecture)
+- [Dependencies](#-dependencies)
 
 ---
 
-## 🔭 Aperçu
+## 🔭 Overview
 
-DNA Analyzer est une application de bureau développée en **Python / Tkinter** permettant d'analyser des séquences ADN bactériennes à partir d'une saisie directe ou d'un fichier FASTA.
+DNA Analyzer is a desktop application built in **Python / Tkinter** for analyzing bacterial DNA sequences from either direct input or a FASTA file.
 
-Elle couvre les analyses bioinformatiques fondamentales avec une architecture modulaire :
+It covers the fundamental bioinformatics analyses with a modular architecture:
 
-- **Détection des ORFs** sur les 6 cadres de lecture depuis le 1er nucléotide (brin sens et antisens)
-- **Identification de l'ORF codant** le plus probable avec score /100 et traduction protéique
-- **Analyse double brin simultanée** avec schéma visuel coloré et résultat optimal
-- **Recherche de motifs régulateurs** : promoteurs (-10 / -35), terminateurs Rho-indépendants GC-riches, Shine-Dalgarno
-- **Analyses physico-chimiques** : GC%, Tm, masse moléculaire
-- **Visualisations graphiques** interactives via Matplotlib
-- **Export** CSV, Excel, JSON, TXT, FASTA
+- **ORF detection** across all 6 reading frames starting from the 1st nucleotide (sense and antisense strands)
+- **Identification of the most likely coding ORF** with a score out of 100 and protein translation
+- **Simultaneous double-strand analysis** with a colored visual diagram and optimal result
+- **Regulatory motif search**: promoters (-10 / -35), GC-rich Rho-independent terminators, Shine-Dalgarno sequences
+- **Physicochemical analyses**: GC%, Tm, molecular mass
+- **Interactive graphical visualizations** via Matplotlib
+- **Export** to CSV, Excel, JSON, TXT, FASTA
 
-![Interface principale — détection ORF](screenshots/screenshot_orf_main.png)
-*Interface principale : détection des ORFs sur les 6 cadres de lecture, meilleur candidat identifié (Frame +1, score ★)*
+![Main interface — ORF detection](screenshots/screenshot_orf_main.png)
+*Main interface: ORF detection across the 6 reading frames, best candidate identified (Frame +1, ★ score)*
 
 ---
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-### Analyses biologiques
-| Analyse | Description |
+### Biological analyses
+| Analysis | Description |
 |---|---|
-| 📋 Cadres de lecture | Segmentation codon par codon sur les 6 frames depuis le 1er nucléotide |
-| 🏆 ORF codant | Score /100 : longueur, ATG, taille protéique, brin, stop — meilleur candidat identifié |
-| ⚙️ Traduction protéique | Traduction de l'ORF principal, colorée par propriété biochimique |
-| 📍 Promoteurs | Pairs Box-35 / Box-10 avec tolérance aux mismatches |
-| 🎯 Shine-Dalgarno | Consensus AGGAGG localisé 7–9 pb en amont d'ATG |
-| 🔚 Terminateurs | Structures tige-boucle **riches en GC** (tige ≥ 50% GC) + polyT |
-| ✂️ Sites de restriction | 15 enzymes courantes (EcoRI, BamHI, HindIII…) |
-| 📊 Statistiques | GC%, Tm Wallace, Tm Nearest-Neighbor, masse moléculaire |
+| 📋 Reading frames | Codon-by-codon segmentation across the 6 frames starting from the 1st nucleotide |
+| 🏆 Coding ORF | Score /100: length, ATG, protein size, strand, stop — best candidate identified |
+| ⚙️ Protein translation | Translation of the main ORF, colored by biochemical property |
+| 📍 Promoters | Box-35 / Box-10 pairs with mismatch tolerance |
+| 🎯 Shine-Dalgarno | AGGAGG consensus located 7–9 bp upstream of ATG |
+| 🔚 Terminators | **GC-rich** stem-loop structures (stem ≥ 50% GC) + polyT |
+| ✂️ Restriction sites | 15 common enzymes (EcoRI, BamHI, HindIII…) |
+| 📊 Statistics | GC%, Wallace Tm, Nearest-Neighbor Tm, molecular mass |
 
-### Interface & usabilité
-- Interface graphique avec **thème biologique** (palette verte émeraude)
-- Animation ADN double hélice en temps réel dans la barre de titre
-- **Validation des entrées** en temps réel (vide, trop court, caractères non-ATCG)
-- **Analyse threadée** — UI non bloquante sur les longues séquences FASTA
-- Import de fichiers FASTA (`.fasta`, `.fa`, `.txt`, `.seq`)
-- Calcul du **brin complémentaire inverse** en un clic
-- Seuil de longueur minimum des ORFs configurable (défaut : 30 pb)
-
----
-
-## 🆕 Nouveautés & Améliorations
-
-### Correctifs critiques
-
-**Correctif A1 — Bouton d'analyse**
-Le bouton `LANCER L'ANALYSE` manquait son argument `command=self._run` et ne répondait pas aux clics. Corrigé dans `gui/input_frame.py`.
-
-**Correctif A2 — Seuil longueur minimale ORF**
-La valeur par défaut (90 pb) était trop restrictive pour les séquences courtes. Réduite à **30 pb** dans `orf_finder.py` et `input_frame.py`.
-
-### Nouvelles fonctionnalités
-
-**Amélioration A3 — Validation des entrées utilisateur**
-Trois vérifications avant toute analyse :
-- Séquence vide → message d'erreur rouge inline
-- Séquence < 15 nucléotides → avertissement avec la longueur
-- Caractères non-ATCG → liste des caractères invalides
-
-Validation aussi **en temps réel** pendant la saisie (bordure rouge si caractères invalides). Les messages disparaissent automatiquement après 5 secondes.
-
-**Amélioration A4 — Refonte des onglets ORF**
-Deux nouveaux onglets distincts remplacent l'onglet ORF unique :
-- **📋 Cadres de lecture** : tous les segments entre codons stop sur les 6 cadres depuis le 1er nucléotide, avec indication de la présence d'un ATG
-- **🏆 ORF Codant** : meilleur candidat avec score /100, justification détaillée, séquence ADN colorée et protéine traduite
-
-**Amélioration A5 — Filtre biologique des terminateurs**
-Les terminateurs Rho-indépendants actifs ont une tige riche en G-C. Seuls les terminateurs avec **GC tige ≥ 50%** sont retenus dans les analyses principales (les autres restent disponibles en fallback).
-
-**Amélioration A6 — Fenêtre Analyse Double Brin** ⭐
-Voir la section dédiée ci-dessous.
+### Interface & usability
+- Graphical interface with a **biology-themed** design (emerald green palette)
+- Real-time DNA double-helix animation in the title bar
+- **Real-time input validation** (empty, too short, non-ATCG characters)
+- **Threaded analysis** — non-blocking UI on long FASTA sequences
+- FASTA file import (`.fasta`, `.fa`, `.txt`, `.seq`)
+- One-click **reverse complement strand** calculation
+- Configurable minimum ORF length threshold (default: 30 bp)
 
 ---
 
-## 📁 Structure du projet
+## 🆕 What's New & Improvements
+
+### Critical fixes
+
+**Fix A1 — Analysis button**
+The `RUN ANALYSIS` button was missing its `command=self._run` argument and did not respond to clicks. Fixed in `gui/input_frame.py`.
+
+**Fix A2 — Minimum ORF length threshold**
+The default value (90 bp) was too restrictive for short sequences. Reduced to **30 bp** in `orf_finder.py` and `input_frame.py`.
+
+### New features
+
+**Improvement A3 — User input validation**
+Three checks before any analysis:
+- Empty sequence → inline red error message
+- Sequence < 15 nucleotides → warning showing the length
+- Non-ATCG characters → list of invalid characters
+
+Validation also happens **in real time** while typing (red border if invalid characters are present). Messages disappear automatically after 5 seconds.
+
+**Improvement A4 — ORF tabs redesign**
+Two new distinct tabs replace the single ORF tab:
+- **📋 Reading Frames**: all segments between stop codons across the 6 frames from the 1st nucleotide, with an indication of ATG presence
+- **🏆 Coding ORF**: best candidate with a score /100, detailed justification, colored DNA sequence, and translated protein
+
+**Improvement A5 — Biological filter for terminators**
+Active Rho-independent terminators have a G-C-rich stem. Only terminators with a **stem GC ≥ 50%** are kept in the main analyses (others remain available as a fallback).
+
+**Improvement A6 — Double-Strand Analysis Window** ⭐
+See the dedicated section below.
+
+---
+
+## 📁 Project Structure
 
 ```
 dna_analyzer/
 │
-├── main.py                    # Point d'entrée — lancer avec : python main.py
+├── main.py                    # Entry point — run with: python main.py
 │
 ├── analysis/
 │   ├── __init__.py
-│   ├── orf_finder.py          # ORFs 6 frames + score codant [AMÉLIORÉ]
-│   ├── motif_finder.py        # Promoteurs, SD, terminateurs GC-riche, restriction
-│   └── statistics.py         # Composition, Tm, masse moléculaire, GC glissant
+│   ├── orf_finder.py          # 6-frame ORFs + coding score [IMPROVED]
+│   ├── motif_finder.py        # Promoters, SD, GC-rich terminators, restriction
+│   └── statistics.py         # Composition, Tm, molecular mass, sliding GC
 │
 ├── data/
 │   ├── __init__.py
-│   └── codon_table.py        # Table des codons + sites de restriction
+│   └── codon_table.py        # Codon table + restriction sites
 │
 ├── gui/
 │   ├── __init__.py
-│   ├── app.py                # Fenêtre principale + orchestration analyses [AMÉLIORÉ]
-│   ├── input_frame.py        # Saisie, validation, boutons action [AMÉLIORÉ]
-│   ├── results_frame.py      # 7 onglets de résultats [AMÉLIORÉ]
-│   ├── visualize_frame.py    # Graphiques Matplotlib
-│   └── dual_strand_window.py # Fenêtre analyse double brin [NOUVEAU]
+│   ├── app.py                # Main window + analysis orchestration [IMPROVED]
+│   ├── input_frame.py        # Input, validation, action buttons [IMPROVED]
+│   ├── results_frame.py      # 7 result tabs [IMPROVED]
+│   ├── visualize_frame.py    # Matplotlib charts
+│   └── dual_strand_window.py # Double-strand analysis window [NEW]
 │
 ├── export/
 │   ├── __init__.py
-│   └── exporter.py           # Export CSV, Excel, JSON, TXT, FASTA
+│   └── exporter.py           # CSV, Excel, JSON, TXT, FASTA export
 │
-└── requirements.txt          # Dépendances Python
+└── requirements.txt          # Python dependencies
 ```
 
 ---
 
 ## 🛠 Installation
 
-### Prérequis
+### Prerequisites
 
-- Python **3.10 ou supérieur**
-- `pip` à jour
+- Python **3.10 or higher**
+- Up-to-date `pip`
 
-### 1. Cloner le dépôt
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/votre-utilisateur/dna_analyzer.git
+git clone https://github.com/your-username/dna_analyzer.git
 cd dna_analyzer
 ```
 
-### 2. Créer un environnement virtuel (recommandé)
+### 2. Create a virtual environment (recommended)
 
 ```bash
 python -m venv bioenv
@@ -160,236 +160,236 @@ source bioenv/bin/activate        # Linux / macOS
 bioenv\Scripts\activate           # Windows
 ```
 
-### 3. Installer les dépendances
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### Dépendances principales
+#### Main dependencies
 
 ```
 matplotlib>=3.7.0
 openpyxl>=3.1.0
 ```
 
-> **Note** : `tkinter` est inclus avec Python standard.
-> Sur Ubuntu/Debian, si tkinter est manquant :
+> **Note**: `tkinter` ships with standard Python.
+> On Ubuntu/Debian, if tkinter is missing:
 > ```bash
 > sudo apt install python3-tk
 > ```
 
 ---
 
-## 🚀 Lancement
+## 🚀 Running the App
 
 ```bash
 python main.py
 ```
 
-L'interface s'ouvre avec une séquence de démonstration pré-chargée, prête à être analysée.
+The interface opens with a demo sequence pre-loaded, ready to be analyzed.
 
 ---
 
-## 📖 Guide d'utilisation
+## 📖 User Guide
 
-### Panneau gauche — Saisie
+### Left panel — Input
 
 ```
 ┌─────────────────────────────────┐
-│  Séquence ADN (5'→3')           │
+│  DNA Sequence (5'→3')           │
 │  ┌───────────────────────────┐  │
 │  │ ATGCCCGGGTAA...           │  │
 │  └───────────────────────────┘  │
-│  300 pb  •  GC: 48.3%           │
+│  300 bp  •  GC: 48.3%           │
 │                                 │
-│  [📁 Importer FASTA] [↔ RC] [✕] │
+│  [📁 Import FASTA] [↔ RC] [✕]   │
 │                                 │
-│  Analyses à effectuer :         │
-│  ☑ Détection ORFs (6 cadres)    │
-│  ☑ Promoteurs -10 / -35         │
+│  Analyses to run:               │
+│  ☑ ORF Detection (6 frames)     │
+│  ☑ Promoters -10 / -35          │
 │  ☑ Shine-Dalgarno               │
-│  ☑ Terminateurs Rho-indép.      │
-│  ☑ Sites de restriction         │
+│  ☑ Rho-independent terminators  │
+│  ☑ Restriction sites            │
 │                                 │
-│  Longueur min. ORF (pb) : [30]  │
+│  Min. ORF length (bp): [30]     │
 │                                 │
-│  [▶  LANCER L'ANALYSE]          │
-│  [🧬  SCHÉMA DOUBLE BRIN]       │
+│  [▶  RUN ANALYSIS]              │
+│  [🧬  DOUBLE-STRAND DIAGRAM]    │
 └─────────────────────────────────┘
 ```
 
-| Élément | Rôle |
+| Element | Role |
 |---|---|
-| Zone de texte | Coller la séquence ADN directement (ATCG uniquement) — validation en temps réel |
-| `📁 Importer FASTA` | Charger un fichier FASTA — les lignes `>` sont ignorées |
-| `↔ RC` | Remplace la séquence par son brin complémentaire inverse |
-| `✕` | Efface la zone de saisie |
-| Cases à cocher | Activer/désactiver chaque analyse individuellement |
-| Longueur min. ORF | Seuil en pb — `30` pour tous les ORFs, `90+` pour les candidats biologiques |
-| `▶ LANCER L'ANALYSE` | Démarre l'analyse avec validation des entrées |
-| `🧬 SCHÉMA DOUBLE BRIN` | **[NOUVEAU]** Ouvre la fenêtre d'analyse visuelle des 2 brins |
+| Text box | Paste the DNA sequence directly (ATCG only) — real-time validation |
+| `📁 Import FASTA` | Load a FASTA file — `>` header lines are ignored |
+| `↔ RC` | Replaces the sequence with its reverse complement strand |
+| `✕` | Clears the input box |
+| Checkboxes | Enable/disable each analysis individually |
+| Min. ORF length | Threshold in bp — `30` for all ORFs, `90+` for biological candidates |
+| `▶ RUN ANALYSIS` | Starts the analysis with input validation |
+| `🧬 DOUBLE-STRAND DIAGRAM` | **[NEW]** Opens the window for visual analysis of both strands |
 
-> **Validation automatique :** si la séquence est vide, trop courte ou contient des caractères non-ATCG, un message d'erreur rouge s'affiche et l'analyse ne démarre pas.
+> **Automatic validation:** if the sequence is empty, too short, or contains non-ATCG characters, a red error message is shown and the analysis does not start.
 
 ---
 
-### Panneau droit — Onglets de résultats
+### Right panel — Result tabs
 
-#### 📋 Cadres de lecture *(nouveau)*
-Affiche tous les segments entre codons stop sur les **6 cadres de lecture** en partant du 1er nucléotide, sur les deux brins. Chaque ligne indique :
-- Cadre (+1 à +3 sens, -1 à -3 antisens) et brin
-- Position de début et de fin (1-based)
-- Longueur en pb, nombre d'acides aminés
-- Présence d'un ATG interne (★)
-- Codon stop terminal
+#### 📋 Reading Frames *(new)*
+Shows all segments between stop codons across the **6 reading frames**, starting from the 1st nucleotide, on both strands. Each row shows:
+- Frame (+1 to +3 sense, -1 to -3 antisense) and strand
+- Start and end position (1-based)
+- Length in bp, number of amino acids
+- Presence of an internal ATG (★)
+- Terminal stop codon
 
-Le **meilleur segment** (plus long avec ATG) est surligné en vert.
+The **best segment** (longest with ATG) is highlighted in green.
 
-#### 🏆 ORF Codant *(nouveau)*
-Identifie le meilleur candidat codant avec :
-- **Score /100** calculé sur 7 critères biologiques
-- Justification détaillée point par point
-- Cartes de résumé : cadre, brin, position, longueur, ATG, stop, masse moléculaire
-- Séquence ADN de l'ORF (par triplets)
-- Protéine traduite colorée (hydrophobe/polaire/chargé/autre)
-- Classement des 10 meilleurs candidats
+#### 🏆 Coding ORF *(new)*
+Identifies the best coding candidate with:
+- **Score /100** calculated from 7 biological criteria
+- Detailed point-by-point justification
+- Summary cards: frame, strand, position, length, ATG, stop, molecular mass
+- ORF DNA sequence (by triplets)
+- Translated protein colored (hydrophobic/polar/charged/other)
+- Ranking of the top 10 candidates
 
-#### 📍 Promoteurs
-Tableau des paires Box-35 / Box-10 détectées. Niveaux de qualité : `Consensus parfait` > `Fort` > `Modéré` > `Faible`.
+#### 📍 Promoters
+Table of detected Box-35 / Box-10 pairs. Quality levels: `Perfect consensus` > `Strong` > `Moderate` > `Weak`.
 
 #### 🎯 Shine-Dalgarno
-Sites SD localisés avec leur ATG associé, espacement et nombre de mismatches.
+SD sites located with their associated ATG, spacing, and number of mismatches.
 
-#### 🔚 Terminateurs
-Structures tige-boucle (GC-riches) + polyT. Colonnes : position, Bras1, Boucle, Bras2, PolyT, longueur tige.
+#### 🔚 Terminators
+Stem-loop structures (GC-rich) + polyT. Columns: position, Arm1, Loop, Arm2, PolyT, stem length.
 
 #### ✂️ Restriction
-Enzymes présentes dans la séquence, nombre de coupures et positions 1-based.
+Enzymes present in the sequence, number of cuts, and 1-based positions.
 
-#### 📊 Statistiques
-Longueur, GC%, AT%, ratio G/C, Tm Wallace, Tm Nearest-Neighbor, masse moléculaire ss/ds, barre de composition visuelle colorée.
+#### 📊 Statistics
+Length, GC%, AT%, G/C ratio, Wallace Tm, Nearest-Neighbor Tm, ss/ds molecular mass, colored visual composition bar.
 
 ---
 
-## 🧬 Analyse Double Brin *(nouvelle fonctionnalité)*
+## 🧬 Double-Strand Analysis *(new feature)*
 
-Accessible via le bouton **"🧬 SCHÉMA DOUBLE BRIN"** dans le panneau gauche.
+Accessible via the **"🧬 DOUBLE-STRAND DIAGRAM"** button in the left panel.
 
-### Principe biologique
-Une molécule d'ADN double brin possède deux orientations de lecture :
-- **Brin sens 5'→3' (+)** — la séquence telle que saisie
-- **Brin antisens 3'→5' (-)** — le brin complémentaire inverse
+### Biological principle
+A double-stranded DNA molecule has two reading orientations:
+- **Sense strand 5'→3' (+)** — the sequence as entered
+- **Antisense strand 3'→5' (-)** — the reverse complement strand
 
-Un gène peut être codé sur l'un ou l'autre brin. Cette fenêtre analyse **simultanément** les deux orientations et identifie le meilleur candidat.
+A gene can be encoded on either strand. This window **simultaneously** analyzes both orientations and identifies the best candidate.
 
-![Carte double brin — analyse simultanée des deux brins] ("2d137923-fcf8-4cee-995b-a141a202f439.png")
-*Carte linéaire des deux brins : ORFs (vert/orange), promoteurs Box-35 (bleu), Box-10 (orange), terminateurs GC-riches. Le brin sens (+) est identifié comme meilleur candidat (score 90/100).*
+![Double-strand map — simultaneous analysis of both strands] ("2d137923-fcf8-4cee-995b-a141a202f439.png")
+*Linear map of both strands: ORFs (green/orange), Box-35 promoters (blue), Box-10 (orange), GC-rich terminators. The sense strand (+) is identified as the best candidate (score 90/100).*
 
-### Onglets de la fenêtre
+### Window tabs
 
-#### 📊 Carte Double Brin
-Représentation linéaire des deux brins sur deux axes Matplotlib superposés, dans le même style que la carte de séquence principale :
-- 🟩 **Rectangles verts/teal** — ORFs (or pour le meilleur)
-- 🔵 **Lignes bleues** — promoteurs Box-35
-- 🔴 **Lignes rouges** — promoteurs Box-10
-- 🟠 **Zones orange** — terminateurs GC-riches
-- 🔺 **Triangles violets** — sites Shine-Dalgarno
-- Barre d'outils Matplotlib (zoom, sauvegarde PNG)
+#### 📊 Double-Strand Map
+Linear representation of both strands on two stacked Matplotlib axes, in the same style as the main sequence map:
+- 🟩 **Green/teal rectangles** — ORFs (gold for the best one)
+- 🔵 **Blue lines** — Box-35 promoters
+- 🔴 **Red lines** — Box-10 promoters
+- 🟠 **Orange zones** — GC-rich terminators
+- 🔺 **Purple triangles** — Shine-Dalgarno sites
+- Matplotlib toolbar (zoom, PNG save)
 
-#### 🔤 Séquence Brin + et Brin −
-Chaque nucléotide est coloré selon sa fonction biologique :
+#### 🔤 Strand + and Strand − Sequences
+Each nucleotide is colored according to its biological function:
 
-| Couleur | Élément |
+| Color | Element |
 |---|---|
-| Vert foncé `#A9DFBF` | ORF meilleur candidat |
-| Vert pâle `#D5F5E3` | ORF classique |
-| Bleu pâle `#AED6F1` | Promoteur Box -35 |
-| Rouge pâle `#F5B7B1` | Promoteur Box -10 |
-| Orange pâle `#FDEBD0` | Terminateur Rho-indépendant (GC-riche) |
-| Violet pâle `#E8DAEF` | Site Shine-Dalgarno |
-| **Texte vert gras** | Codon ATG |
-| **Texte rouge gras** | Codon Stop |
+| Dark green `#A9DFBF` | Best-candidate ORF |
+| Pale green `#D5F5E3` | Standard ORF |
+| Pale blue `#AED6F1` | Box -35 promoter |
+| Pale red `#F5B7B1` | Box -10 promoter |
+| Pale orange `#FDEBD0` | Rho-independent terminator (GC-rich) |
+| Pale purple `#E8DAEF` | Shine-Dalgarno site |
+| **Bold green text** | ATG codon |
+| **Bold red text** | Stop codon |
 
-Chaque ligne de 60 bases affiche aussi les annotations de position à droite (`─35@pos`, `TERM@pos(GC:62%)`).
+Each 60-base line also shows position annotations on the right (`─35@pos`, `TERM@pos(GC:62%)`).
 
-#### ★ Résultat Optimal
+#### ★ Optimal Result
 
-![Résultat optimal — analyse double brin](screenshots/screenshot_optimal_result.png)
-*Résultat optimal : brin sens (+) sélectionné avec score 90/100. Tableau comparatif brin (+) vs brin (−), protéine traduite de 47 acides aminés colorée par propriété biochimique.*
+![Optimal result — double-strand analysis](screenshots/screenshot_optimal_result.png)
+*Optimal result: sense strand (+) selected with a score of 90/100. Comparison table of strand (+) vs strand (−), translated protein of 47 amino acids colored by biochemical property.*
 
-- **Bannière or** avec les 12 métriques clés du brin gagnant
-- **Mini-carte** du brin optimal avec légende
-- **Protéine traduite** colorée par propriété biochimique
-- **Tableau comparatif** brin (+) vs brin (-) avec cellules gagnantes surlignées en vert
+- **Gold banner** with the 12 key metrics of the winning strand
+- **Mini-map** of the optimal strand with legend
+- **Translated protein** colored by biochemical property
+- **Comparison table** of strand (+) vs strand (-) with winning cells highlighted in green
 
 ---
 
-### Onglet Visualisation (panneau principal)
+### Visualization Tab (main panel)
 
-![Carte de séquence — vue linéaire](screenshots/screenshot_sequence_map.png)
-*Vue linéaire de la séquence (300 pb) : ORF détecté en vert (positions 202–234), promoteurs Box-35 (lignes bleues) et Box-10 (lignes orange) répartis sur la séquence.*
+![Sequence map — linear view](screenshots/screenshot_sequence_map.png)
+*Linear view of the sequence (300 bp): ORF detected in green (positions 202–234), Box-35 promoters (blue lines) and Box-10 (orange lines) distributed across the sequence.*
 
-Utiliser le menu déroulant pour choisir parmi 4 graphiques :
+Use the dropdown menu to choose among 4 charts:
 
-| Graphique | Description |
+| Chart | Description |
 |---|---|
-| Carte de séquence | Vue linéaire avec ORFs, promoteurs, SD et terminateurs |
-| GC% (fenêtre glissante) | Courbe du taux GC sur fenêtre de 100 pb avec ligne du GC% moyen |
-| Composition nucléotidique | Histogramme + camembert A/T/G/C |
-| Longueurs des ORFs | Barres horizontales des 20 premiers ORFs, colorées par brin |
+| Sequence map | Linear view with ORFs, promoters, SD, and terminators |
+| GC% (sliding window) | GC-content curve over a 100 bp window with an average GC% line |
+| Nucleotide composition | Histogram + pie chart of A/T/G/C |
+| ORF lengths | Horizontal bars for the first 20 ORFs, colored by strand |
 
 ---
 
-## 💾 Export des résultats
+## 💾 Exporting Results
 
-Accessible via **Fichier** dans la barre de menu, après avoir lancé une analyse.
+Accessible via **File** in the menu bar, after running an analysis.
 
-| Format | Contenu |
+| Format | Content |
 |---|---|
-| 📊 Excel (`.xlsx`) | 6 onglets : ORFs, Promoteurs, SD, Terminateurs, Restriction, Statistiques |
-| 📄 CSV (`.csv`) | Tous les résultats dans un fichier texte tabulé |
-| 🗄️ JSON (`.json`) | Export complet structuré, idéal pour traitement programmatique |
-| 📝 Rapport TXT (`.txt`) | Rapport lisible et formaté prêt à être partagé |
-| 🧬 FASTA (`.fasta`) | Séquence analysée au format FASTA standard |
+| 📊 Excel (`.xlsx`) | 6 tabs: ORFs, Promoters, SD, Terminators, Restriction, Statistics |
+| 📄 CSV (`.csv`) | All results in a tab-delimited text file |
+| 🗄️ JSON (`.json`) | Full structured export, ideal for programmatic processing |
+| 📝 TXT Report (`.txt`) | Readable, formatted report ready to be shared |
+| 🧬 FASTA (`.fasta`) | Analyzed sequence in standard FASTA format |
 
 ---
 
-## 🏗 Architecture technique
+## 🏗 Technical Architecture
 
-### Flux de l'analyse
+### Analysis flow
 
 ```
-Saisie séquence
+Sequence input
       │
       ▼
-input_frame.py ──► Validation (vide / trop court / non-ATCG)
+input_frame.py ──► Validation (empty / too short / non-ATCG)
       │
       ▼
 app.py (_run_analysis)
       │
-      ├──► find_reading_frames()  →  find_best_coding_orf()   [6 cadres + score]
-      ├──► find_orfs()                                         [ATG→Stop classique]
+      ├──► find_reading_frames()  →  find_best_coding_orf()   [6 frames + score]
+      ├──► find_orfs()                                         [classic ATG→Stop]
       ├──► find_promoters()                                    [Box-35 / Box-10]
       ├──► find_shine_dalgarno()                               [AGGAGG]
-      ├──► find_terminators() + filtre GC ≥ 50%               [tige-boucle]
+      ├──► find_terminators() + GC ≥ 50% filter                [stem-loop]
       ├──► find_restriction_sites()                            [15 enzymes]
-      └──► nucleotide_composition() + Tm + MW                 [statistiques]
+      └──► nucleotide_composition() + Tm + MW                 [statistics]
                │
                ▼
       results_frame.display()    visualize_frame.draw()
 ```
 
-### Score de potentiel codant
+### Coding potential score
 
 ```python
 score = 0
-score += min(40, longueur_orf / longueur_seq * 200)  # longueur relative
-score += 20 if has_atg else 0                         # codon start
-score += 20 if num_aa >= 50 else 10 if num_aa >= 30 else 0  # taille
-score += 5 if strand == '+' else 0                    # brin sens
-score += 10 if stop_codon present else 0              # ORF complet
-score += 5 if '*' not in protein else 0               # pas de stop interne
+score += min(40, orf_length / seq_length * 200)       # relative length
+score += 20 if has_atg else 0                         # start codon
+score += 20 if num_aa >= 50 else 10 if num_aa >= 30 else 0  # size
+score += 5 if strand == '+' else 0                    # sense strand
+score += 10 if stop_codon present else 0              # complete ORF
+score += 5 if '*' not in protein else 0               # no internal stop
 ```
 
 ### Threading
@@ -406,25 +406,25 @@ threading.Thread(target=_worker, daemon=True).start()
 
 ---
 
-## 📦 Dépendances
+## 📦 Dependencies
 
 ```
-matplotlib>=3.7.0       # Graphiques intégrés dans Tkinter
-openpyxl>=3.1.0         # Export Excel (.xlsx)
+matplotlib>=3.7.0       # Charts embedded in Tkinter
+openpyxl>=3.1.0         # Excel export (.xlsx)
 ```
 
-> Les modules `tkinter`, `threading`, `csv`, `json`, `math`, `collections` sont inclus dans la bibliothèque standard Python.
+> The `tkinter`, `threading`, `csv`, `json`, `math`, and `collections` modules are included in Python's standard library.
 
-Installation :
+Installation:
 ```bash
 pip install matplotlib openpyxl
 ```
 
 ---
 
-## 🧪 Séquence de test
+## 🧪 Test Sequence
 
-La séquence suivante (300 pb) est utilisée comme séquence de démonstration. Elle contient un ORF principal sur le **brin antisens** (score 90/100), des promoteurs, et des terminateurs GC-riches :
+The following sequence (300 bp) is used as a demo sequence. It contains a main ORF on the **antisense strand** (score 90/100), promoters, and GC-rich terminators:
 
 ```
 CATTTCTCTTAAGATTTATTCTATCTTAACACAACAACTTTTAATAAAAGATATGTAGAT
@@ -434,18 +434,18 @@ TACATTACAAGTTATAAAACAAAAGAAGTGGGACACAGAATTCGTCTTGAACACTGTGTC
 CCACCTCGTCCCCAAAACTTGCTCTGTCCGTAGAAAAATAAAAAGGGGCCCCCTTTGTTG
 ```
 
-**Résultat attendu :**
+**Expected result:**
 
-| Critère | Brin + | Brin − |
+| Criterion | Strand + | Strand − |
 |---|---|---|
-| Score codant | 76/100 | **90/100 ★** |
-| Meilleur ORF | 54 pb / 18 aa | **141 pb / 47 aa** |
-| Codon ATG | ✓ | ✓ |
-| Terminateurs GC-riche | 2 | 2 |
+| Coding score | 76/100 | **90/100 ★** |
+| Best ORF | 54 bp / 18 aa | **141 bp / 47 aa** |
+| ATG codon | ✓ | ✓ |
+| GC-rich terminators | 2 | 2 |
 
 ---
 
-## 👥 Auteurs
+## 👥 Authors
 
 me xoxo
 
